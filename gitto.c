@@ -1,24 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <dirent.h>
+#include <windows.h>
 
 #define COMMAND_MAX_LEN 100
 
 int directory_has_git(const char *directory_name) {
-    DIR *directory;
-    struct dirent *entry;
-
-    directory = opendir(directory_name);
-    if (directory != NULL) {
-        while ((entry = readdir(directory)) != NULL) {
-            if (entry->d_type == DT_DIR && strcmp(entry->d_name, ".git") == 0) {
-                closedir(directory);
-                return 1;
-            }
-        }
-        closedir(directory);
+    WIN32_FIND_DATA findData;
+    char searchPath[MAX_PATH];
+    sprintf(searchPath, "%s\\.git", directory_name);
+    HANDLE hFind = FindFirstFile(searchPath, &findData);
+    if (hFind != INVALID_HANDLE_VALUE) {
+        FindClose(hFind);
+        return 1;
     }
     return 0;
 }
@@ -39,32 +33,32 @@ void handle_repository(const char *repository_name, const char *git_command) {
     printf("Repository: %s\n", repository_name);
 
     // Enter the directory
-    chdir(repository_name);
+    SetCurrentDirectory(repository_name);
 
     // Run git command
     execute_git_command(git_command);
 
     // Move back to the original directory
-    chdir("..");
+    SetCurrentDirectory("..");
 
     // Add a newline after each repository
     printf("\n");
 }
 
 void traverse_directories(const char *git_command) {
-    DIR *directory;
-    struct dirent *entry;
-
-    directory = opendir(".");
-    if (directory != NULL) {
-        while ((entry = readdir(directory)) != NULL) {
-            if (entry->d_type == DT_DIR) {
-                if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
-                    handle_repository(entry->d_name, git_command);
+    WIN32_FIND_DATA findData;
+    char searchPath[MAX_PATH];
+    sprintf(searchPath, "%s\\*", ".");
+    HANDLE hFind = FindFirstFile(searchPath, &findData);
+    if (hFind != INVALID_HANDLE_VALUE) {
+        do {
+            if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+                if (strcmp(findData.cFileName, ".") != 0 && strcmp(findData.cFileName, "..") != 0) {
+                    handle_repository(findData.cFileName, git_command);
                 }
             }
-        }
-        closedir(directory);
+        } while (FindNextFile(hFind, &findData) != 0);
+        FindClose(hFind);
     }
 }
 
