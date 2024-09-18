@@ -6,7 +6,7 @@ Open-sourced Multiple Git Repositories Control CLI
 **Note:** Please make sure that if you have gcc command already defined in your environment.
 
 ```bash
-gcc gitto.c -o gittoapp
+gcc gitto.c -o gitto
 ```
 
 ### Running the executable file
@@ -14,5 +14,5 @@ gcc gitto.c -o gittoapp
 You can move the output executable command to the folder if you wanted test in it.
 
 ```bash
-./gittoapp <git command (i.e status>
+./gitto <git command (i.e status>
 ```
